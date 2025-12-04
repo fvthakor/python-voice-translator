@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌐 Real-Time Voice Translation Chat</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1200px;
+            height: 90vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .login-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        .login-screen h2 {
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+
+        .login-form {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .chat-screen {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        .chat-info {
+            background: #f5f5f5;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .user-info strong {
+            color: #333;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #fafafa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .message-username {
+            font-weight: 600;
+            color: #667eea;
+            margin-right: 10px;
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .message-lang {
+            font-size: 11px;
+            background: #e0e7ff;
+            color: #667eea;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
+
+        .message-content {
+            background: white;
+            padding: 12px 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            max-width: 70%;
+        }
+
+        .message.own .message-content {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+        }
+
+        .message.own .message-username {
+            color: #764ba2;
+        }
+
+        .message-original {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .message-translation {
+            font-size: 13px;
+            opacity: 0.8;
+            font-style: italic;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+
+        .system-message {
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+            margin: 10px 0;
+            font-style: italic;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .input-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .voice-btn, .send-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .voice-btn {
+            background: #10b981;
+            color: white;
+        }
+
+        .voice-btn:hover {
+            background: #059669;
+        }
+
+        .voice-btn.recording {
+            background: #ef4444;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .send-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .send-btn:hover {
+            background: #5568d3;
+        }
+
+        .status {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+
+        .typing-indicator {
+            color: #667eea;
+            font-style: italic;
+            font-size: 13px;
+            padding: 10px;
+        }
+
+        .users-online {
+            font-size: 13px;
+            color: #10b981;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌐 Real-Time Voice Translation Chat</h1>
+            <p>Speak in your language, hear in any language!</p>
+        </div>
+
+        <!-- Login Screen -->
+        <div class="login-screen" id="loginScreen">
+            <h2>Join the Chat</h2>
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="username">👤 Your Name:</label>
+                    <input type="text" id="username" placeholder="Enter your name" required>
+                </div>
+                <div class="form-group">
+                    <label for="speakLang">🎤 I will speak in:</label>
+                    <select id="speakLang">
+                        <option value="hi">Hindi (हिंदी)</option>
+                        <option value="en" selected>English</option>
+                        <option value="es">Spanish (Español)</option>
+                        <option value="fr">French (Français)</option>
+                        <option value="de">German (Deutsch)</option>
+                        <option value="zh-cn">Chinese (中文)</option>
+                        <option value="ja">Japanese (日本語)</option>
+                        <option value="ar">Arabic (العربية)</option>
+                        <option value="pt">Portuguese (Português)</option>
+                        <option value="ru">Russian (Русский)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="hearLang">🔊 I want to hear in:</label>
+                    <select id="hearLang">
+                        <option value="hi">Hindi (हिंदी)</option>
+                        <option value="en" selected>English</option>
+                        <option value="es">Spanish (Español)</option>
+                        <option value="fr">French (Français)</option>
+                        <option value="de">German (Deutsch)</option>
+                        <option value="zh-cn">Chinese (中文)</option>
+                        <option value="ja">Japanese (日本語)</option>
+                        <option value="ar">Arabic (العربية)</option>
+                        <option value="pt">Portuguese (Português)</option>
+                        <option value="ru">Russian (Русский)</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="joinChat()">Join Chat 🚀</button>
+            </div>
+        </div>
+
+        <!-- Chat Screen -->
+        <div class="chat-screen" id="chatScreen">
+            <div class="chat-info">
+                <div class="user-info">
+                    <strong id="currentUser"></strong> | 
+                    Speaking: <span id="currentSpeak"></span> | 
+                    Hearing: <span id="currentHear"></span>
+                </div>
+                <div class="users-online" id="usersOnline">👥 0 users online</div>
+            </div>
+
+            <div class="messages-container" id="messagesContainer">
+                <div class="system-message">Welcome to the chat! Start speaking or typing...</div>
+            </div>
+
+            <div class="typing-indicator hidden" id="typingIndicator"></div>
+
+            <div class="input-area">
+                <div class="input-controls">
+                    <input type="text" class="message-input" id="messageInput" 
+                           placeholder="Type a message or use voice..." 
+                           onkeypress="handleKeyPress(event)">
+                    <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceRecording()">
+                        🎤 Voice
+                    </button>
+                    <button class="send-btn" onclick="sendMessage()">Send 📤</button>
+                </div>
+                <div class="status" id="status">Connected</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        const socket = io();
+        let currentUser = '';
+        let speakLang = 'en';
+        let hearLang = 'en';
+        let recognition = null;
+        let isRecording = false;
+
+        const langNames = {
+            'hi': 'Hindi', 'en': 'English', 'es': 'Spanish', 'fr': 'French',
+            'de': 'German', 'zh-cn': 'Chinese', 'ja': 'Japanese', 
+            'ar': 'Arabic', 'pt': 'Portuguese', 'ru': 'Russian'
+        };
+
+        // Initialize speech recognition
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onresult = async (event) => {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('messageInput').value = transcript;
+                await sendMessage();
+                stopRecording();
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                stopRecording();
+            };
+
+            recognition.onend = () => {
+                stopRecording();
+            };
+        }
+
+        // Socket event handlers
+        socket.on('connect', () => {
+            updateStatus('Connected', '#10b981');
+        });
+
+        socket.on('disconnect', () => {
+            updateStatus('Disconnected', '#ef4444');
+        });
+
+        socket.on('user_joined', (data) => {
+            addSystemMessage(`${data.username} joined the chat (speaks ${langNames[data.speak_lang]})`);
+        });
+
+        socket.on('user_left', (data) => {
+            addSystemMessage(`${data.username} left the chat`);
+        });
+
+        socket.on('user_list', (data) => {
+            document.getElementById('usersOnline').textContent = `👥 ${data.users.length} users online`;
+        });
+
+        socket.on('new_message', async (data) => {
+            await displayMessage(data);
+        });
+
+        socket.on('user_typing', (data) => {
+            if (data.is_typing) {
+                document.getElementById('typingIndicator').textContent = `${data.username} is typing...`;
+                document.getElementById('typingIndicator').classList.remove('hidden');
+            } else {
+                document.getElementById('typingIndicator').classList.add('hidden');
+            }
+        });
+
+        function joinChat() {
+            const username = document.getElementById('username').value.trim();
+            if (!username) {
+                alert('Please enter your name');
+                return;
+            }
+
+            currentUser = username;
+            speakLang = document.getElementById('speakLang').value;
+            hearLang = document.getElementById('hearLang').value;
+
+            // Update speech recognition language
+            if (recognition) {
+                const langMap = {
+                    'hi': 'hi-IN', 'en': 'en-US', 'es': 'es-ES', 'fr': 'fr-FR',
+                    'de': 'de-DE', 'zh-cn': 'zh-CN', 'ja': 'ja-JP', 
+                    'ar': 'ar-SA', 'pt': 'pt-PT', 'ru': 'ru-RU'
+                };
+                recognition.lang = langMap[speakLang] || 'en-US';
+            }
+
+            socket.emit('join_chat', {
+                username: username,
+                speak_lang: speakLang,
+                hear_lang: hearLang
+            });
+
+            document.getElementById('currentUser').textContent = username;
+            document.getElementById('currentSpeak').textContent = langNames[speakLang];
+            document.getElementById('currentHear').textContent = langNames[hearLang];
+
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('chatScreen').style.display = 'flex';
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            socket.emit('send_message', {
+                original_text: message
+            });
+
+            input.value = '';
+            socket.emit('typing', { is_typing: false });
+        }
+
+        async function displayMessage(data) {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message' + (data.username === currentUser ? ' own' : '');
+
+            let translatedText = data.original_text;
+            
+            // Translate if not own message and languages differ
+            if (data.username !== currentUser && data.original_lang !== hearLang) {
+                try {
+                    translatedText = await translateText(data.original_text, data.original_lang, hearLang);
+                    
+                    // Optionally speak the translation
+                    speakText(translatedText, hearLang);
+                } catch (error) {
+                    console.error('Translation error:', error);
+                }
+            }
+
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <span class="message-username">${data.username}</span>
+                    <span class="message-time">${data.timestamp}</span>
+                    <span class="message-lang">${langNames[data.original_lang]}</span>
+                </div>
+                <div class="message-content">
+                    <div class="message-original">${data.original_text}</div>
+                    ${data.original_lang !== hearLang && data.username !== currentUser ? 
+                        `<div class="message-translation">💬 ${translatedText}</div>` : ''}
+                </div>
+            `;
+
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        async function translateText(text, fromLang, toLang) {
+            try {
+                const response = await axios.get('https://translate.googleapis.com/translate_a/single', {
+                    params: {
+                        client: 'gtx',
+                        sl: fromLang,
+                        tl: toLang,
+                        dt: 't',
+                        q: text
+                    }
+                });
+                return response.data[0][0][0];
+            } catch (error) {
+                console.error('Translation error:', error);
+                return text;
+            }
+        }
+
+        function speakText(text, lang) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = lang === 'zh-cn' ? 'zh-CN' : lang;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function toggleVoiceRecording() {
+            if (!recognition) {
+                alert('Speech recognition is not supported in your browser');
+                return;
+            }
+
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.start();
+                isRecording = true;
+                document.getElementById('voiceBtn').classList.add('recording');
+                document.getElementById('voiceBtn').textContent = '⏹️ Stop';
+            }
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            document.getElementById('voiceBtn').classList.remove('recording');
+            document.getElementById('voiceBtn').textContent = '🎤 Voice';
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            } else {
+                socket.emit('typing', { is_typing: true });
+                setTimeout(() => {
+                    socket.emit('typing', { is_typing: false });
+                }, 1000);
+            }
+        }
+
+        function addSystemMessage(message) {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'system-message';
+            messageDiv.textContent = message;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function updateStatus(text, color) {
+            const status = document.getElementById('status');
+            status.textContent = text;
+            status.style.color = color;
+        }
+    </script>
+</body>
+</html>
