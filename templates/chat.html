@@ -15,16 +15,17 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 10px;
         }
 
         .container {
-            width: 95%;
-            max-width: 1200px;
-            height: 90vh;
+            width: 100%;
+            max-width: 1400px;
+            height: 95vh;
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
@@ -36,18 +37,20 @@
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 20px;
+            padding: 20px 30px;
             text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         .header h1 {
-            font-size: 24px;
+            font-size: 28px;
             margin-bottom: 5px;
+            font-weight: 700;
         }
 
         .header p {
             font-size: 14px;
-            opacity: 0.9;
+            opacity: 0.95;
         }
 
         .login-screen {
@@ -115,36 +118,77 @@
             display: none;
             flex: 1;
             flex-direction: column;
+            min-height: 0; /* Important for flexbox scrolling */
         }
 
         .chat-info {
-            background: #f5f5f5;
-            padding: 15px 20px;
-            border-bottom: 1px solid #e0e0e0;
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 15px 25px;
+            border-bottom: 2px solid #dee2e6;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            flex-shrink: 0;
         }
 
         .user-info {
             font-size: 14px;
-            color: #666;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
         }
 
         .user-info strong {
-            color: #333;
+            color: #212529;
+            font-size: 15px;
+        }
+
+        .info-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 13px;
         }
 
         .messages-container {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 20px;
-            background: #fafafa;
+            background: linear-gradient(to bottom, #f8f9fa, #ffffff);
+            scroll-behavior: smooth;
+            min-height: 0; /* Critical for proper scrolling */
+        }
+
+        /* Custom Scrollbar */
+        .messages-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .messages-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb:hover {
+            background: #5568d3;
         }
 
         .message {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             animation: slideIn 0.3s ease;
+            display: flex;
+            flex-direction: column;
         }
 
         @keyframes slideIn {
@@ -161,147 +205,246 @@
         .message-header {
             display: flex;
             align-items: center;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            gap: 8px;
         }
 
         .message-username {
-            font-weight: 600;
+            font-weight: 700;
             color: #667eea;
-            margin-right: 10px;
+            font-size: 14px;
         }
 
         .message-time {
-            font-size: 12px;
-            color: #999;
+            font-size: 11px;
+            color: #6c757d;
         }
 
         .message-lang {
             font-size: 11px;
-            background: #e0e7ff;
-            color: #667eea;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-left: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 600;
         }
 
         .message-content {
             background: white;
-            padding: 12px 15px;
-            border-radius: 12px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            max-width: 70%;
+            padding: 14px 18px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            max-width: 75%;
+            border: 1px solid #e9ecef;
+            word-wrap: break-word;
+        }
+
+        .message.own {
+            align-items: flex-end;
+        }
+
+        .message.own .message-header {
+            flex-direction: row-reverse;
         }
 
         .message.own .message-content {
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            margin-left: auto;
+            border: none;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         .message.own .message-username {
             color: #764ba2;
         }
 
+        .message.own .message-translation {
+            border-top: 1px solid rgba(255,255,255,0.3);
+        }
+
         .message-original {
-            font-size: 14px;
-            margin-bottom: 8px;
+            font-size: 15px;
+            margin-bottom: 0;
+            line-height: 1.5;
         }
 
         .message-translation {
             font-size: 13px;
-            opacity: 0.8;
+            opacity: 0.85;
             font-style: italic;
             border-top: 1px solid rgba(0,0,0,0.1);
-            padding-top: 8px;
-            margin-top: 8px;
+            padding-top: 10px;
+            margin-top: 10px;
+            line-height: 1.4;
+        }
+
+        .message-translation::before {
+            content: "🔄 ";
         }
 
         .system-message {
             text-align: center;
-            color: #999;
+            color: #6c757d;
             font-size: 13px;
-            margin: 10px 0;
+            margin: 15px 0;
             font-style: italic;
+            padding: 8px;
+            background: rgba(108, 117, 125, 0.1);
+            border-radius: 8px;
         }
 
         .input-area {
-            padding: 20px;
+            padding: 20px 25px;
             background: white;
-            border-top: 1px solid #e0e0e0;
+            border-top: 2px solid #dee2e6;
+            box-shadow: 0 -4px 6px rgba(0,0,0,0.05);
+            flex-shrink: 0;
         }
 
         .input-controls {
             display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 12px;
+            margin-bottom: 12px;
         }
 
         .message-input {
             flex: 1;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
+            padding: 14px 18px;
+            border: 2px solid #dee2e6;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.3s;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         .voice-btn, .send-btn {
-            padding: 12px 24px;
+            padding: 14px 28px;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
+            border-radius: 12px;
+            font-size: 15px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 700;
             transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .voice-btn {
-            background: #10b981;
+            background: linear-gradient(135deg, #10b981, #059669);
             color: white;
         }
 
         .voice-btn:hover {
-            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
 
         .voice-btn.recording {
-            background: #ef4444;
-            animation: pulse 1s infinite;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            animation: pulse 1.5s infinite;
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+            0%, 100% { 
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 0.85;
+                transform: scale(0.98);
+            }
         }
 
         .send-btn {
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
         }
 
         .send-btn:hover {
-            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .send-btn:active, .voice-btn:active {
+            transform: translateY(0);
         }
 
         .status {
             font-size: 12px;
-            color: #666;
+            color: #6c757d;
             text-align: center;
+            padding: 5px;
         }
 
         .typing-indicator {
             color: #667eea;
             font-style: italic;
             font-size: 13px;
-            padding: 10px;
+            padding: 10px 20px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            margin: 0 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .users-online {
             font-size: 13px;
             color: #10b981;
+            font-weight: 600;
+            padding: 6px 14px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 12px;
         }
 
         .hidden {
             display: none !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            .input-controls {
+                flex-wrap: wrap;
+            }
+
+            .voice-btn, .send-btn {
+                flex: 1;
+                min-width: 100px;
+            }
+        }
+
+        /* Loading Animation */
+        .loading-dots {
+            display: inline-block;
+        }
+
+        .loading-dots::after {
+            content: '...';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
         }
     </style>
 </head>
@@ -358,15 +501,15 @@
         <div class="chat-screen" id="chatScreen">
             <div class="chat-info">
                 <div class="user-info">
-                    <strong id="currentUser"></strong> | 
-                    Speaking: <span id="currentSpeak"></span> | 
-                    Hearing: <span id="currentHear"></span>
+                    <strong id="currentUser"></strong>
+                    <span class="info-badge">🎤 <span id="currentSpeak"></span></span>
+                    <span class="info-badge">🔊 <span id="currentHear"></span></span>
                 </div>
                 <div class="users-online" id="usersOnline">👥 0 users online</div>
             </div>
 
             <div class="messages-container" id="messagesContainer">
-                <div class="system-message">Welcome to the chat! Start speaking or typing...</div>
+                <div class="system-message">🎉 Welcome to the chat! Start speaking or typing to connect with others...</div>
             </div>
 
             <div class="typing-indicator hidden" id="typingIndicator"></div>
@@ -374,14 +517,14 @@
             <div class="input-area">
                 <div class="input-controls">
                     <input type="text" class="message-input" id="messageInput" 
-                           placeholder="Type a message or use voice..." 
+                           placeholder="Type a message or click voice to speak..." 
                            onkeypress="handleKeyPress(event)">
                     <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceRecording()">
                         🎤 Voice
                     </button>
-                    <button class="send-btn" onclick="sendMessage()">Send 📤</button>
+                    <button class="send-btn" onclick="sendMessage()">📤 Send</button>
                 </div>
-                <div class="status" id="status">Connected</div>
+                <div class="status" id="status">🟢 Connected</div>
             </div>
         </div>
     </div>
@@ -529,19 +672,32 @@
 
             messageDiv.innerHTML = `
                 <div class="message-header">
-                    <span class="message-username">${data.username}</span>
+                    <span class="message-username">${escapeHtml(data.username)}</span>
                     <span class="message-time">${data.timestamp}</span>
                     <span class="message-lang">${langNames[data.original_lang]}</span>
                 </div>
                 <div class="message-content">
-                    <div class="message-original">${data.original_text}</div>
+                    <div class="message-original">${escapeHtml(data.original_text)}</div>
                     ${data.original_lang !== hearLang && data.username !== currentUser ? 
-                        `<div class="message-translation">💬 ${translatedText}</div>` : ''}
+                        `<div class="message-translation">${escapeHtml(translatedText)}</div>` : ''}
                 </div>
             `;
 
             messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Smooth scroll to bottom
+            setTimeout(() => {
+                messagesContainer.scrollTo({
+                    top: messagesContainer.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 100);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         async function translateText(text, fromLang, toLang) {
@@ -609,13 +765,22 @@
             messageDiv.className = 'system-message';
             messageDiv.textContent = message;
             messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Smooth scroll to bottom
+            setTimeout(() => {
+                messagesContainer.scrollTo({
+                    top: messagesContainer.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 100);
         }
 
         function updateStatus(text, color) {
             const status = document.getElementById('status');
             status.textContent = text;
-            status.style.color = color;
+            if (color) {
+                status.style.color = color;
+            }
         }
     </script>
 </body>
