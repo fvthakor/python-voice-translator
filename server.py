@@ -3,8 +3,9 @@ Real-Time Voice Translation Chat Server
 WebSocket server that handles multiple clients with voice translation
 """
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit, join_room, leave_room
+from googletrans import Translator
 import base64
 import os
 from datetime import datetime
@@ -13,6 +14,9 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
+# Initialize translator
+translator = Translator()
+
 # Store active users
 active_users = {}
 chat_rooms = {'global': []}
@@ -20,6 +24,32 @@ chat_rooms = {'global': []}
 @app.route('/')
 def index():
     return render_template('chat.html')
+
+@app.route('/translate', methods=['POST'])
+def translate_text():
+    """
+    Backend translation endpoint for long text or as fallback
+    """
+    try:
+        data = request.get_json()
+        text = data.get('text', '')
+        source_lang = data.get('source', 'auto')
+        target_lang = data.get('target', 'en')
+        
+        if not text:
+            return jsonify({'error': 'No text provided'}), 400
+        
+        # Use googletrans for translation
+        translation = translator.translate(text, src=source_lang, dest=target_lang)
+        
+        return jsonify({
+            'translated_text': translation.text,
+            'source_lang': translation.src,
+            'target_lang': target_lang
+        })
+    except Exception as e:
+        print(f"Translation error: {e}")
+        return jsonify({'error': str(e), 'translated_text': text}), 500
 
 @socketio.on('connect')
 def handle_connect():
