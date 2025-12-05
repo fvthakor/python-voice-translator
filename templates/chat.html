@@ -657,35 +657,71 @@
             messageDiv.className = 'message' + (data.username === currentUser ? ' own' : '');
 
             let translatedText = data.original_text;
+            let showTranslation = false;
             
             // Translate if not own message and languages differ
             if (data.username !== currentUser && data.original_lang !== hearLang) {
+                showTranslation = true;
+                
+                // Show message with loading indicator first
+                messageDiv.innerHTML = `
+                    <div class="message-header">
+                        <span class="message-username">${escapeHtml(data.username)}</span>
+                        <span class="message-time">${data.timestamp}</span>
+                        <span class="message-lang">${langNames[data.original_lang]}</span>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-original">${escapeHtml(data.original_text)}</div>
+                        <div class="message-translation">⏳ Translating<span class="loading-dots"></span></div>
+                    </div>
+                `;
+                messagesContainer.appendChild(messageDiv);
+                scrollToBottom();
+                
                 try {
+                    // Translate the text
                     translatedText = await translateText(data.original_text, data.original_lang, hearLang);
                     
-                    // Optionally speak the translation
+                    // Update with translation
+                    messageDiv.innerHTML = `
+                        <div class="message-header">
+                            <span class="message-username">${escapeHtml(data.username)}</span>
+                            <span class="message-time">${data.timestamp}</span>
+                            <span class="message-lang">${langNames[data.original_lang]}</span>
+                        </div>
+                        <div class="message-content">
+                            <div class="message-original">${escapeHtml(data.original_text)}</div>
+                            <div class="message-translation">${escapeHtml(translatedText)}</div>
+                        </div>
+                    `;
+                    
+                    // Speak the translation
                     speakText(translatedText, hearLang);
                 } catch (error) {
                     console.error('Translation error:', error);
+                    // Show error message
+                    messageDiv.querySelector('.message-translation').textContent = '❌ Translation failed';
                 }
+            } else {
+                // No translation needed
+                messageDiv.innerHTML = `
+                    <div class="message-header">
+                        <span class="message-username">${escapeHtml(data.username)}</span>
+                        <span class="message-time">${data.timestamp}</span>
+                        <span class="message-lang">${langNames[data.original_lang]}</span>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-original">${escapeHtml(data.original_text)}</div>
+                    </div>
+                `;
+                messagesContainer.appendChild(messageDiv);
             }
 
-            messageDiv.innerHTML = `
-                <div class="message-header">
-                    <span class="message-username">${escapeHtml(data.username)}</span>
-                    <span class="message-time">${data.timestamp}</span>
-                    <span class="message-lang">${langNames[data.original_lang]}</span>
-                </div>
-                <div class="message-content">
-                    <div class="message-original">${escapeHtml(data.original_text)}</div>
-                    ${data.original_lang !== hearLang && data.username !== currentUser ? 
-                        `<div class="message-translation">${escapeHtml(translatedText)}</div>` : ''}
-                </div>
-            `;
+            scrollToBottom();
+        }
 
-            messagesContainer.appendChild(messageDiv);
-            
-            // Smooth scroll to bottom
+        function scrollToBottom() {
+            const messagesContainer = document.getElementById('messagesContainer');
             setTimeout(() => {
                 messagesContainer.scrollTo({
                     top: messagesContainer.scrollHeight,
@@ -701,7 +737,15 @@
         }
 
         async function translateText(text, fromLang, toLang) {
+            if (!text || text.trim() === '') return text;
+            
             try {
+                // For very long text (>500 chars), use backend translation
+                if (text.length > 500) {
+                    return await translateWithBackend(text, fromLang, toLang);
+                }
+                
+                // Try Google Translate API first
                 const response = await axios.get('https://translate.googleapis.com/translate_a/single', {
                     params: {
                         client: 'gtx',
@@ -709,12 +753,43 @@
                         tl: toLang,
                         dt: 't',
                         q: text
-                    }
+                    },
+                    timeout: 10000 // 10 second timeout
                 });
-                return response.data[0][0][0];
+                
+                // Google Translate API returns an array of translation segments for long text
+                // We need to concatenate all segments to get the complete translation
+                let translatedText = '';
+                if (response.data && response.data[0]) {
+                    for (let i = 0; i < response.data[0].length; i++) {
+                        if (response.data[0][i][0]) {
+                            translatedText += response.data[0][i][0];
+                        }
+                    }
+                }
+                
+                return translatedText || text;
             } catch (error) {
-                console.error('Translation error:', error);
-                return text;
+                console.error('Frontend translation error:', error);
+                // Fallback to backend translation
+                return await translateWithBackend(text, fromLang, toLang);
+            }
+        }
+
+        async function translateWithBackend(text, fromLang, toLang) {
+            try {
+                const response = await axios.post('/translate', {
+                    text: text,
+                    source: fromLang,
+                    target: toLang
+                }, {
+                    timeout: 15000 // 15 second timeout for long text
+                });
+                
+                return response.data.translated_text || text;
+            } catch (error) {
+                console.error('Backend translation error:', error);
+                return text; // Return original text if all translation methods fail
             }
         }
 
